@@ -254,11 +254,10 @@
 
   /* ===== الشبكة ===== */
   main{
-    display:grid; gap:14px; padding:14px 16px 90px;
-    grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+    display:grid; gap:10px; padding:12px 14px 90px;
+    grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));
     align-items:start;
   }
-  @media (max-width:360px){ main{grid-template-columns:1fr} }
 
   .card{
     background:var(--card); border:1px solid var(--line); border-radius:14px;
@@ -282,6 +281,18 @@
     font-weight:700; border-radius:999px; padding:4px 10px; white-space:nowrap;
     box-shadow:0 1px 3px rgba(0,0,0,.25);
   }
+
+  .card-dates{
+    display:flex; flex-wrap:wrap; gap:6px; padding:6px 10px;
+    background:#f7faf8; border-bottom:1px solid var(--line);
+  }
+  .date-chip{
+    display:inline-flex; align-items:center; gap:4px; min-width:0;
+    border:1px solid #dce9e2; border-radius:999px; padding:3px 8px;
+    background:#fff; color:var(--muted); font-size:11.5px; line-height:1.3;
+  }
+  .date-chip b{color:var(--brand); font-weight:700}
+  .date-chip .year{color:var(--ink); font-weight:700; white-space:nowrap; direction:ltr; unicode-bidi:isolate}
 
   .rows{padding:6px 14px 12px}
   .row{
@@ -428,25 +439,39 @@
   /* ===== بطاقات أكثر كثافة وأجمل على الشاشات الكبيرة ===== */
   @media (min-width:768px){
     main{
-      grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-      gap:10px; padding:12px 14px 90px;
+      grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      gap:9px; padding:12px 14px 90px;
     }
-    .card-head{padding:10px 12px; gap:7px}
+    .card-head{padding:8px 10px; gap:7px}
     .card-head .title{
-      font-size:14.5px; line-height:1.45;
+      font-size:13.5px; line-height:1.4;
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
       overflow:hidden;
     }
-    .count-badge{font-size:11px; padding:3px 9px}
-    .rows{padding:3px 11px 8px}
-    .row{padding:4px 0; font-size:12.5px; line-height:1.5; gap:7px}
-    .row .k{min-width:62px; max-width:44%; font-size:11.5px; line-height:1.45}
+    .count-badge{font-size:10px; padding:2px 7px}
+    .card-dates{gap:4px; padding:5px 8px}
+    .date-chip{font-size:10.5px; padding:2px 6px}
+    .rows{padding:3px 10px 7px}
+    .row{padding:3px 0; font-size:12px; line-height:1.45; gap:6px}
+    .row .k{min-width:56px; max-width:42%; font-size:11px; line-height:1.4}
     .row .v{
       display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical;
       overflow:hidden; line-height:1.5;
     }
-    .card-foot{padding:6px 12px; font-size:12px}
+    .card-foot{padding:5px 10px; font-size:11px}
     .stats{padding-top:10px}
+  }
+
+  @media (max-width:767px){
+    main{grid-template-columns:1fr; gap:8px; padding:10px 10px 82px}
+    .card-head{padding:8px 10px; gap:7px}
+    .card-head .title{font-size:14px; line-height:1.4}
+    .rows{padding:3px 10px 7px}
+    .row{padding:4px 0; font-size:13px; line-height:1.5; gap:7px}
+    .row .k{min-width:64px; max-width:38%; font-size:11.5px}
+    .card-dates{gap:5px; padding:5px 9px}
+    .date-chip{font-size:11px}
+    .card-foot{padding:5px 10px; font-size:11.5px}
   }
 
   @media (max-width:768px){
@@ -465,7 +490,7 @@
     .sort-btn{padding:9px 10px; font-size:13px}
     .stats{gap:8px; font-size:12px; padding:10px 12px 0}
     main{gap:10px; padding:12px 10px 90px}
-    .row .k{min-width:74px}
+    .row .k{min-width:58px}
   }
 </style>
 </head>
@@ -776,10 +801,18 @@
 
   function parseYearAny(v){
     if(v == null) return null;
-    const m = String(v).match(/-?\d+/);
+    const m = normalizeKey(String(v)).match(/-?\d+/);
     if(!m) return null;
     const n = parseInt(m[0],10);
     return Number.isFinite(n) ? n : null;
+  }
+  function yearSummary(values, suffix){
+    const source = Array.isArray(values) ? values : [values];
+    const years = [...new Set(source.map(parseYearAny).filter(n=>n!==null))].sort((a,b)=>a-b);
+    if(!years.length) return '—';
+    return years.length === 1
+      ? fmt(years[0]) + suffix
+      : fmt(years[0]) + '–' + fmt(years[years.length-1]) + suffix;
   }
   function normalizeKey(s){
     if(!s) return '';
@@ -810,7 +843,7 @@
       const head = (rows[0]||[]).map(x=>String(x||'').trim());
       STATIC.headers = head;
       const idx = (name)=> head.findIndex(h=>normalizeKey(h).includes(normalizeKey(name)));
-      const iTitle=idx('اسم الكتاب'), iAuth=idx('اسم المؤلف'), iCat=idx('التصنيف'), iPub=idx('دار النشر'), iGreg=idx('سنة الطبع الميلادي'), iHijri=idx('سنة الطبع الهجري');
+      const iTitle=idx('اسم الكتاب'), iAuth=idx('اسم المؤلف'), iCat=idx('التصنيف'), iPub=idx('دار النشر'), iGreg=idx('ميلادي'), iHijri=idx('هجري');
       const items=[], cats=new Map(), pubs=new Map();
       for(let r=1;r<rows.length;r++){
         const row = rows[r]||[];
@@ -831,10 +864,12 @@
         const sk = mergeKey(title)+'|'+mergeKey(author);
         let it = items.find(x=>x._k===sk);
         if(!it){
-          it = {t:title,a:author,n:0,f:fields.slice(0,8),i:items.length,_k:sk,_parts:[],_search:normalizeKey([title,author,cat,pub,...fields.map(f=>f[1])].join(' ')),_author:normalizeKey(author),_cat:normalizeKey(cat),_pub:pubKey(pub),_greg:greg,_hijri:hijri};
+          it = {t:title,a:author,n:0,f:fields.slice(0,8),i:items.length,_k:sk,_parts:[],_search:normalizeKey([title,author,cat,pub,...fields.map(f=>f[1])].join(' ')),_author:normalizeKey(author),_cat:normalizeKey(cat),_pub:pubKey(pub),_greg:greg,_hijri:hijri,_gregs:[],_hijris:[]};
           items.push(it);
         }
         it.n += 1;
+        if(greg!==null) it._gregs.push(greg);
+        if(hijri!==null) it._hijris.push(hijri);
         it._parts.push(head.map((h,ci)=>String(row[ci]??'').trim()));
         cats.set(cat,(cats.get(cat)||0)+1);
         if(pub){ pubs.set(pub,(pubs.get(pub)||0)+1); }
@@ -886,7 +921,7 @@
       const total = sel.length;
       const pages = Math.max(1, Math.ceil(total / PER));
       const start = (state.page-1)*PER;
-      return { total, page: state.page, pages, per: PER, items: sel.slice(start, start+PER).map(it=>({t:it.t,a:it.a,n:it.n,f:it.f,i:it.i})) };
+      return { total, page: state.page, pages, per: PER, items: sel.slice(start, start+PER).map(it=>({t:it.t,a:it.a,n:it.n,f:it.f,i:it.i,g:it._gregs,h:it._hijris})) };
     }
   }
 
@@ -996,6 +1031,22 @@
       head.appendChild(badge);
     }
     card.appendChild(head);
+
+    const dates = document.createElement('div');
+    dates.className = 'card-dates';
+    [['ميلادي',it.g,'م'],['هجري',it.h,'هـ']].forEach(([label,values,suffix])=>{
+      const chip = document.createElement('span');
+      chip.className = 'date-chip';
+      const name = document.createElement('b');
+      name.textContent = label;
+      const year = document.createElement('span');
+      year.className = 'year';
+      year.textContent = yearSummary(values,suffix);
+      chip.appendChild(name);
+      chip.appendChild(year);
+      dates.appendChild(chip);
+    });
+    card.appendChild(dates);
 
     const rows = document.createElement('div');
     rows.className = 'rows';
