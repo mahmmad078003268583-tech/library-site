@@ -843,7 +843,7 @@
       const head = (rows[0]||[]).map(x=>String(x||'').trim());
       STATIC.headers = head;
       const idx = (name)=> head.findIndex(h=>normalizeKey(h).includes(normalizeKey(name)));
-      const iTitle=idx('اسم الكتاب'), iAuth=idx('اسم المؤلف'), iCat=idx('التصنيف'), iPub=idx('دار النشر'), iGreg=idx('ميلادي'), iHijri=idx('هجري');
+      const iTitle=idx('اسم الكتاب'), iAuth=idx('المؤلف'), iCat=idx('التصنيف'), iPub=idx('دار النشر'), iGreg=idx('ميلادي'), iHijri=idx('هجري');
       const items=[], cats=new Map(), pubs=new Map();
       for(let r=1;r<rows.length;r++){
         const row = rows[r]||[];
