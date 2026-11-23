@@ -807,13 +807,14 @@
     const n = parseInt(m[0],10);
     return Number.isFinite(n) ? n : null;
   }
+  const fmtYear = n => Number(n).toLocaleString('ar-EG',{useGrouping:false});
   function yearSummary(values, suffix){
     const source = Array.isArray(values) ? values : [values];
     const years = [...new Set(source.map(parseYearAny).filter(n=>n!==null))].sort((a,b)=>a-b);
     if(!years.length) return '—';
     return years.length === 1
-      ? fmt(years[0]) + suffix
-      : fmt(years[0]) + '–' + fmt(years[years.length-1]) + suffix;
+      ? fmtYear(years[0]) + suffix
+      : fmtYear(years[0]) + '–' + fmtYear(years[years.length-1]) + suffix;
   }
   function normalizeKey(s){
     if(!s) return '';
