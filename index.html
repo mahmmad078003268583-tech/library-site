@@ -307,6 +307,7 @@
   }
   .row .v{flex:1; word-break:break-word; color:var(--ink)}
   .row .v.empty{color:#bbb}
+  .row .v.year-value{direction:ltr; unicode-bidi:isolate; text-align:right; white-space:nowrap}
 
   /* ===== الحالات ===== */
   .state{
@@ -440,7 +441,7 @@
   /* ===== بطاقات أكثر كثافة وأجمل على الشاشات الكبيرة ===== */
   @media (min-width:768px){
     main{
-      grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+      grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
       gap:9px; padding:12px 14px 90px;
     }
     .card-head{padding:8px 10px; gap:7px}
@@ -455,10 +456,6 @@
     .rows{padding:3px 10px 7px}
     .row{padding:3px 0; font-size:12px; line-height:1.45; gap:6px}
     .row .k{min-width:56px; max-width:42%; font-size:11px; line-height:1.4}
-    .row .v{
-      display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical;
-      overflow:hidden; line-height:1.5;
-    }
     .card-foot{padding:5px 10px; font-size:11px}
     .stats{padding-top:10px}
   }
@@ -807,7 +804,7 @@
     const n = parseInt(m[0],10);
     return Number.isFinite(n) ? n : null;
   }
-  const fmtYear = n => Number(n).toLocaleString('ar-EG',{useGrouping:false});
+  const fmtYear = n => String(Number(n));
   function yearSummary(values, suffix){
     const source = Array.isArray(values) ? values : [values];
     const years = [...new Set(source.map(parseYearAny).filter(n=>n!==null))].sort((a,b)=>a-b);
@@ -1034,50 +1031,30 @@
     }
     card.appendChild(head);
 
-    const dates = document.createElement('div');
-    dates.className = 'card-dates';
-    [['ميلادي',it.g,'م'],['هجري',it.h,'هـ']].forEach(([label,values,suffix])=>{
-      const chip = document.createElement('span');
-      chip.className = 'date-chip';
-      const name = document.createElement('b');
-      name.textContent = label;
-      const year = document.createElement('span');
-      year.className = 'year';
-      year.textContent = yearSummary(values,suffix);
-      chip.appendChild(name);
-      chip.appendChild(year);
-      dates.appendChild(chip);
-    });
-
     const rows = document.createElement('div');
     rows.className = 'rows';
-    let datesAdded = false;
-    const dateRowIndex = Math.max(
-      it.f.findIndex(([k])=>['الطبعه','طبعه'].includes(k.trim().replace(/[أإآ]/g,'ا').replace(/ة/g,'ه'))),
-      -1
-    );
-    const authorRowIndex = it.f.findIndex(([k])=>['المؤلف','اسم المؤلف'].includes(k.trim().replace(/[أإآ]/g,'ا')));
-    const datesAfterIndex = dateRowIndex >= 0 ? dateRowIndex : authorRowIndex;
-    it.f.forEach(([k,v], rowIndex)=>{
-      // عند وجود أجزاء: يظهر العمود العدد الكلي للأجزاء بدل رقم الجزء الأول
-      const nk = k.trim().replace(/[أإآ]/g, 'ا');
-      if((nk === 'الاجزاء' || nk === 'الجزء') && it.n > 1) v = fmt(it.n);
+    const appendRow = (label, value, valueClass='')=>{
       const row = document.createElement('div');
       row.className = 'row';
       const kk = document.createElement('span');
-      kk.className = 'k'; kk.textContent = k; kk.title = k;
+      kk.className = 'k'; kk.textContent = label; kk.title = label;
       const vv = document.createElement('span');
-      vv.className = 'v' + (v ? '' : ' empty');
-      vv.textContent = v || '—';
-      vv.title = v || '';
+      vv.className = 'v' + (value ? '' : ' empty') + (valueClass ? ' ' + valueClass : '');
+      vv.textContent = value || '—';
+      vv.title = value || '';
       row.appendChild(kk); row.appendChild(vv);
       rows.appendChild(row);
-      if(!datesAdded && rowIndex === datesAfterIndex){
-        rows.appendChild(dates);
-        datesAdded = true;
-      }
+    };
+    it.f.forEach(([k,v])=>{
+      const normalizedLabel = normalizeKey(k).replace(/ـ/g,'');
+      if(normalizedLabel.includes('ميلادي') || normalizedLabel.includes('هجري')) return;
+      // عند وجود أجزاء: يظهر العمود العدد الكلي للأجزاء بدل رقم الجزء الأول
+      const nk = k.trim().replace(/[أإآ]/g, 'ا');
+      if((nk === 'الاجزاء' || nk === 'الجزء') && it.n > 1) v = fmt(it.n);
+      appendRow(k,v);
     });
-    if(!datesAdded) rows.appendChild(dates);
+    appendRow('سنة الطبع (ميلادي)', yearSummary(it.g,'م'), 'year-value');
+    appendRow('سنة الطبع (هجري)', yearSummary(it.h,'هـ'), 'year-value');
     card.appendChild(rows);
 
     const foot = document.createElement('div');
