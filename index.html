@@ -286,6 +286,7 @@
     display:flex; flex-wrap:wrap; gap:6px; padding:6px 10px;
     background:#f7faf8; border-bottom:1px solid var(--line);
   }
+  .rows .card-dates{margin:4px 0; border:1px solid #e5eee8; border-radius:10px}
   .date-chip{
     display:inline-flex; align-items:center; gap:4px; min-width:0;
     border:1px solid #dce9e2; border-radius:999px; padding:3px 8px;
@@ -1046,11 +1047,17 @@
       chip.appendChild(year);
       dates.appendChild(chip);
     });
-    card.appendChild(dates);
 
     const rows = document.createElement('div');
     rows.className = 'rows';
-    it.f.forEach(([k,v])=>{
+    let datesAdded = false;
+    const dateRowIndex = Math.max(
+      it.f.findIndex(([k])=>['الطبعه','طبعه'].includes(k.trim().replace(/[أإآ]/g,'ا').replace(/ة/g,'ه'))),
+      -1
+    );
+    const authorRowIndex = it.f.findIndex(([k])=>['المؤلف','اسم المؤلف'].includes(k.trim().replace(/[أإآ]/g,'ا')));
+    const datesAfterIndex = dateRowIndex >= 0 ? dateRowIndex : authorRowIndex;
+    it.f.forEach(([k,v], rowIndex)=>{
       // عند وجود أجزاء: يظهر العمود العدد الكلي للأجزاء بدل رقم الجزء الأول
       const nk = k.trim().replace(/[أإآ]/g, 'ا');
       if((nk === 'الاجزاء' || nk === 'الجزء') && it.n > 1) v = fmt(it.n);
@@ -1064,7 +1071,12 @@
       vv.title = v || '';
       row.appendChild(kk); row.appendChild(vv);
       rows.appendChild(row);
+      if(!datesAdded && rowIndex === datesAfterIndex){
+        rows.appendChild(dates);
+        datesAdded = true;
+      }
     });
+    if(!datesAdded) rows.appendChild(dates);
     card.appendChild(rows);
 
     const foot = document.createElement('div');
@@ -1158,8 +1170,12 @@
     }
   }
 
-  // الإغلاق: النقر على الخلفية فقط (لا داخل المحتوى)، أو زر ×، أو مفتاح Esc
-  partsModal.addEventListener('click', e=>{ if(e.target === partsModal) closeParts(); });
+  // إغلاق نافذة البطاقة بزر × أو بالنقر داخلها/خارجها أو بمفتاح Esc.
+  document.getElementById('partsClose').addEventListener('click', e=>{
+    e.stopPropagation();
+    closeParts();
+  });
+  partsModal.addEventListener('click', ()=> closeParts());
 
   const onSearch = debounce(()=>{ state.q = qInput.value.trim(); resetAndLoad(); }, 300);
   qInput.addEventListener('input', onSearch);
